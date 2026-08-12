@@ -1,0 +1,12 @@
+[Unit]
+Description=Reconcile OMP bounded execution
+
+[Timer]
+# Calendar timers catch up once after resume; no process can reconcile while the host remains suspended.
+OnCalendar=*-*-* *:*:00
+Persistent=true
+AccuracySec=1s
+Unit=omp-bounded-guard.service
+
+[Install]
+WantedBy=timers.target

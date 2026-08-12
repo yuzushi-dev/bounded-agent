@@ -1,0 +1,7 @@
+{
+  "command": ["codex", "plugin", "list", "--json", "--available"],
+  "home": "temporary",
+  "exitCode": 0,
+  "stdout": "{\n  \"installed\": [],\n  \"available\": []\n}\n",
+  "providerCalls": false
+}

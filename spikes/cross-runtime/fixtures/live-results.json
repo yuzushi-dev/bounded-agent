@@ -1,0 +1,45 @@
+{
+  "schema": "omp-cross-runtime-live-results/v1",
+  "date": "2026-08-11",
+  "versions": {
+    "codex": "0.147.0",
+    "claudeCode": "2.1.227"
+  },
+  "lanes": {
+    "codex-to-claude": {
+      "clean": {
+        "executor": "structured artifact accepted and materialized by host",
+        "verifier": "host timeout after 120000 ms",
+        "outcome": "NO_GO"
+      },
+      "defect": {
+        "executor": "host-injected known defect",
+        "verdict": "CHANGES_REQUIRED",
+        "finding": {
+          "code": "known-defect",
+          "message": "result.txt is not exactly SAFE\n"
+        },
+        "verifierLatencyMs": 22597,
+        "verifierTokenUse": {
+          "inputTokens": 6,
+          "outputTokens": 1795,
+          "totalTokens": 1801
+        },
+        "binding": "passed"
+      }
+    },
+    "claude-to-codex": {
+      "clean": {
+        "executor": "structured artifact accepted and materialized by host",
+        "verifier": "contractDigest mismatch rejected by host",
+        "returnedContractDigest": "sha256:9f9f30e6eb8a1a63fc8390fb5c0095f4309ee2a604a24eef8bd9f5caea14ab3c",
+        "outcome": "NO_GO"
+      },
+      "defect": {
+        "executor": "host-injected known defect",
+        "verifier": "contractDigest mismatch rejected by host",
+        "outcome": "NO_GO"
+      }
+    }
+  }
+}

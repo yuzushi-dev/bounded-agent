@@ -1,0 +1,11 @@
+[Unit]
+Description=Bounded runtime recovery guard timer
+
+[Timer]
+OnBootSec=15s
+OnUnitActiveSec=15s
+Unit=bounded-runtime-guard.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target

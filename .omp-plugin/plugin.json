@@ -1,0 +1,5 @@
+{
+  "name": "omp-bounded",
+  "version": "0.0.0",
+  "description": "Deterministic bounded-autonomy enforcement for OMP."
+}

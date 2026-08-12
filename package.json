@@ -1,0 +1,78 @@
+{
+  "name": "omp-bounded",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=22.22.0 <23"
+  },
+  "bin": {
+    "bounded": "scripts/bounded.mjs"
+  },
+  "ompBoundedSupport": {
+    "linux": "7.0.0-28-generic",
+    "omp": "17.2.11"
+  },
+  "omp": {
+    "extensions": [
+      "./extensions/bounded-autonomy.mjs"
+    ]
+  },
+  "ompBoundedBaseline": {
+    "command": "npm test",
+    "cwd": "$OMP_HARNESS_DIR",
+    "passed": 255,
+    "failed": 0,
+    "sourceManifest": {
+      "files": 65,
+      "digest": "sha256:897f3819bee28c762b064e2c4d687b3214551d72d4191d3b8a11edb7d33ddc76",
+      "allowlist": [
+        "package.json",
+        "mcp-lock.json",
+        "adapter/*.mjs",
+        "adapter/pin.json",
+        "adapter/tests/*.test.mjs",
+        "topology/*.mjs",
+        "topology/omp-topology.json",
+        "topology/tests/*.test.mjs",
+        "autonomy/*.mjs",
+        "autonomy/policy.json",
+        "autonomy/tests/*.test.mjs",
+        "runtime/*.mjs",
+        "runtime/run-contract.schema.json",
+        "runtime/fixtures/*.json",
+        "runtime/tests/*.test.mjs",
+        "tests/*.test.mjs"
+      ]
+    },
+    "agentConfig": {
+      "path": "../config.yml",
+      "extensions": [
+        "clean-harness/runtime/context-guard.mjs",
+        "clean-harness/runtime/run-observer.mjs"
+      ]
+    },
+    "externalConfigInputs": [
+      {
+        "path": "$HOME/.config/systemd/user/omp-l4-guard.service",
+        "digest": "sha256:45ae1ed82aa816408fc3bcf7184b997e481303de3bc89f69a95dd97b80087eea"
+      },
+      {
+        "path": "$HOME/.config/systemd/user/omp-l4-guard.timer",
+        "digest": "sha256:c979d09f5b70f4bba08d9a36898cf50b748b3dacc66ae0ee171e5ef034c5d8d6"
+      }
+    ]
+  },
+  "scripts": {
+    "test": "node --test tests/skill-contract.test.mjs && npm run test:runtime && npm run test:codex && npm run test:adapters && npm run test:package && node --test --test-concurrency=1 tests/core/*.test.mjs && node --test --test-concurrency=1 spikes/cross-runtime/tests/*.test.mjs && node --test tests/mcp/*.test.mjs && OMP_HARNESS_DIR=\"${OMP_HARNESS_DIR:-$HOME/.omp/agent/clean-harness}\" node --test --test-concurrency=1 tests/compat/*.test.mjs && npm run test:omp && npm run test:install",
+    "test:omp": "node --test --test-concurrency=1 tests/omp/*.test.mjs",
+    "test:adapters": "node --test --test-concurrency=1 tests/adapters/*.test.mjs",
+    "test:package": "node --test --test-concurrency=1 tests/package/*.test.mjs",
+    "test:install": "node --test --test-concurrency=1 tests/install/*.test.mjs",
+    "test:e2e": "node --test --test-concurrency=1 tests/e2e/*.test.mjs",
+    "test:runtime": "node --test --test-concurrency=1 tests/runtime/*.test.mjs",
+    "test:codex": "node --test --test-concurrency=1 tests/codex/*.test.mjs",
+    "test:spike": "node --test --test-concurrency=1 spikes/cross-runtime/tests/*.test.mjs"
+  }
+}

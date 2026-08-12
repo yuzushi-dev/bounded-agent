@@ -1,0 +1,12 @@
+[Unit]
+Description=OMP bounded rollback guard
+
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart="@NODE_PATH@" "@DOCTOR_PATH@" reconcile --manifest "@MANIFEST_PATH@"
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths="@STATE_ROOT@"

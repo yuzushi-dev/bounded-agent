@@ -1,0 +1,41 @@
+{
+  "schema": "omp-host-integration-probe/v1",
+  "runtime": "codex",
+  "cli": {
+    "name": "codex",
+    "version": "0.147.0",
+    "commands": [
+      {
+        "args": ["--version"],
+        "exitCode": 0,
+        "stdout": "codex-cli 0.147.0\n",
+        "providerCalls": false
+      },
+      {
+        "args": ["features", "list"],
+        "exitCode": 0,
+        "features": {
+          "hooks": {"stage": "stable", "enabled": true},
+          "plugin_hooks": {"stage": "removed", "enabled": false},
+          "plugins": {"stage": "stable", "enabled": true}
+        },
+        "providerCalls": false
+      },
+      {
+        "args": ["plugin", "list", "--json", "--available"],
+        "exitCode": 0,
+        "stdout": "{\n  \"installed\": [],\n  \"available\": []\n}\n",
+        "providerCalls": false
+      }
+    ]
+  },
+  "preToolUseCoverage": {
+    "hostedTools": false,
+    "specialPaths": false,
+    "writeStdinFollowups": false
+  },
+  "decision": {
+    "universalPluginInterception": "unsupported",
+    "reason": "Codex exposes hooks, but plugin_hooks is removed and no universal PreToolUse interception contract is available."
+  }
+}

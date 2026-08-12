@@ -1,0 +1,49 @@
+[
+  {
+    "name": "direct-built-in-allow",
+    "event": {
+      "hook_event_name": "PreToolUse",
+      "session_id": "session-direct",
+      "tool_name": "Bash",
+      "tool_input": { "command": "printf safe" },
+      "tool_use_id": "toolu-direct-allow"
+    },
+    "output": { "hookSpecificOutput": { "hookEventName": "PreToolUse", "permissionDecision": "allow", "permissionDecisionReason": "fixture policy allows this tool call" } }
+  },
+  {
+    "name": "direct-built-in-deny",
+    "event": {
+      "hook_event_name": "PreToolUse",
+      "session_id": "session-direct",
+      "tool_name": "Bash",
+      "tool_input": { "command": "rm -rf ./build" },
+      "tool_use_id": "toolu-direct-deny"
+    },
+    "output": { "hookSpecificOutput": { "hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": "fixture policy denies destructive commands" } }
+  },
+  {
+    "name": "subagent-origin-allow",
+    "event": {
+      "agent_id": "agent-worker-1",
+      "agent_type": "worker",
+      "hook_event_name": "PreToolUse",
+      "parent_session_id": "session-parent",
+      "session_id": "session-subagent",
+      "tool_name": "Bash",
+      "tool_input": { "command": "printf subagent-safe" },
+      "tool_use_id": "toolu-subagent-allow"
+    },
+    "output": { "hookSpecificOutput": { "hookEventName": "PreToolUse", "permissionDecision": "allow", "permissionDecisionReason": "fixture policy allows this tool call" } }
+  },
+  {
+    "name": "mcp-tool-deny",
+    "event": {
+      "hook_event_name": "PreToolUse",
+      "session_id": "session-mcp",
+      "tool_name": "mcp__filesystem__write_file",
+      "tool_input": { "content": "fixture", "path": "artifact.txt" },
+      "tool_use_id": "toolu-mcp-deny"
+    },
+    "output": { "hookSpecificOutput": { "hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": "fixture policy denies MCP writes" } }
+  }
+]

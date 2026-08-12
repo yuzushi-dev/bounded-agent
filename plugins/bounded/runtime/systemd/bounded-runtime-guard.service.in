@@ -1,0 +1,6 @@
+[Unit]
+Description=Bounded runtime recovery guard
+
+[Service]
+Type=oneshot
+ExecStart=@NODE_PATH@ @RUNTIME_PATH@ guard --state-root @STATE_ROOT@

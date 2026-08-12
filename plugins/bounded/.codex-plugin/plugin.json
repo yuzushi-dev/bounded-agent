@@ -1,0 +1,25 @@
+{
+  "name": "bounded",
+  "version": "0.1.1",
+  "description": "Self-contained bounded autonomous runtime and Codex adapter.",
+  "author": {
+    "name": "Bounded contributors"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Bounded",
+    "shortDescription": "Local bounded autonomy for Codex",
+    "longDescription": "Plan, approve, and execute declared local workers with sandboxing, recovery, explicit budgets, and a human finish gate.",
+    "developerName": "Independent",
+    "category": "Productivity",
+    "capabilities": [
+      "Sandboxed local workers",
+      "Deadline and budget checks",
+      "External recovery guard",
+      "Human-gated finish"
+    ],
+    "defaultPrompt": [
+      "Use $bounded-autonomy for this local worker run."
+    ]
+  }
+}
