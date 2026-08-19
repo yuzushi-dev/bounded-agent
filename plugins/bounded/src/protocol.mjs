@@ -36,8 +36,8 @@ function cleanList(values = []) {
 export function inferStrategy(task = '') {
   const text = String(task).toLowerCase();
   if (/\b(bug|fix|regression|crash|race|deadlock|incorrect|broken|failure|error)\b/.test(text)) return 'bugfix';
-  if (/\b(migrat|schema|backfill|data move|upgrade path)\b/.test(text)) return 'migration';
-  if (/\b(dependenc|library|package|sdk|version bump|upgrade .*\b(v?\d+))\b/.test(text)) return 'dependency';
+  if (/\b(migrat(?:e|ion|ing)|schema|backfill|data move|upgrade path)\b/.test(text)) return 'migration';
+  if (/\b(dependenc(?:y|ies)|library|package|sdk|version bump|upgrade .*\b(v?\d+))\b/.test(text)) return 'dependency';
   if (/\b(refactor|cleanup|restructure|extract|rename across|move module)\b/.test(text)) return 'refactor';
   if (/\b(config|configuration|yaml|toml|env var|feature flag)\b/.test(text)) return 'config';
   if (/\b(add|implement|introduce|feature|support)\b/.test(text)) return 'feature';
@@ -50,9 +50,9 @@ export function classifyAssurance({ task = '', writePaths = [], unresolvedDecisi
   const risks = cleanList(riskFlags).map((value) => value.toLowerCase());
   const unresolved = cleanList(unresolvedDecisions);
   const highRisk = risks.some((risk) => /security|auth|credential|permission|destructive|data-loss|production|billing|payment|concurrency|irreversible/.test(risk))
-    || /\b(auth|security|permission|credential|payment|billing|delete data|production|concurrency|race condition)\b/.test(text);
+    || /\b(auth(?:entication|orization)?|security|permission|credential|payment|billing|delete data|production|concurrency|race condition)\b/.test(text);
   const broad = laneCount > 1 || paths.length > 8 || /\b(cross[- ]module|cross[- ]package|monorepo|system[- ]wide|large migration)\b/.test(text);
-  const planningNeeded = unresolved.length > 0 || paths.length > 3 || /\b(migrat|refactor|architecture|breaking|redesign)\b/.test(text);
+  const planningNeeded = unresolved.length > 0 || paths.length > 3 || /\b(migrat(?:e|ion|ing)|refactor|architecture|breaking|redesign)\b/.test(text);
   const trivial = paths.length <= 1 && !highRisk && !planningNeeded && /\b(typo|comment|rename local|format|small config|documentation)\b/.test(text);
 
   if (highRisk || broad) return 'L3';
