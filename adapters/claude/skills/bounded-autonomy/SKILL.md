@@ -35,11 +35,13 @@ bounded prepare \
 The runtime chooses an evidence strategy and an assurance level unless there is a concrete reason to override them.
 
 - L0 direct: trivial, narrow, reversible work. No subagent.
-- L1 verified: normal maintenance. Main agent executes; `bounded-fast-verifier` checks the result on Haiku.
+- L1 verified: normal maintenance. Main agent executes; `bounded-standard-verifier` checks the result on Sonnet.
 - L2 planned: migrations, refactors, breaking changes, or unresolved design work. Main agent writes the plan and executes it; `bounded-standard-verifier` checks the result on Sonnet.
 - L3 orchestrated: high-risk or genuinely disjoint multi-surface work. Disjoint implementation lanes use `bounded-standard-worker` on Sonnet; the integrated result is checked by `bounded-strong-verifier` on Opus.
 
 The main Claude model always inherits the user's current model selection. Do not replace it with a tiered model. Tiering applies only to bounded subagents. If the host exposes the effective launched model, record it separately from the requested tier; otherwise report routing as requested but unverified.
+
+`bounded-mechanical-checker` uses Haiku only for deterministic checks such as changed-file scope membership, named file/literal presence, and explicit command exit status. It is optional and must never replace the semantic L1-L3 verifier. If a check requires behavioral or architectural judgment, route it to the semantic verifier instead.
 
 Never add agents merely to fill capacity. An agent must either own disjoint implementation work or provide independent evidence.
 
@@ -80,6 +82,8 @@ For L0, execute and run the relevant check in the current context.
 For L1 and L2, do not spawn a planner, coordinator, scribe, or reviewer fleet. Execute in the current context. After execution, create a fresh verifier brief with `bounded verifier-brief` and give that brief, the actual diff, repository state, and captured test/runtime evidence to exactly the verifier named by `protocol.routing.verifier`. The verifier must not consume the implementer's success reasoning.
 
 For L3, split only real disjoint lanes. Each lane gets exclusive owned paths and declared dependencies and uses `protocol.routing.worker`. Parallel lanes must not edit the same files. After integration, use the verifier named by `protocol.routing.verifier`. Add another specialty review only when the risk itself requires independent expertise.
+
+Use the Haiku mechanical checker only when a deterministic assertion can be checked more cheaply without semantic interpretation. Do not spawn it when the semantic verifier will necessarily perform the same check anyway.
 
 ## 5. Verification and completion
 
