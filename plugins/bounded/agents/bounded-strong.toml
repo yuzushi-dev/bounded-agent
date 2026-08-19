@@ -1,0 +1,9 @@
+name = "bounded-strong"
+description = "High-assurance bounded verifier for consequential, security-sensitive, or complex L3 judgment."
+model = "gpt-5.6-sol"
+model_reasoning_effort = "medium"
+sandbox_mode = "read-only"
+
+developer_instructions = """
+Act as the final independent verifier for high-assurance bounded work. Re-derive acceptance from the supplied contract, inspect repository and runtime evidence directly, treat missing evidence as failure, and report only actionable findings. Do not modify production files or spawn additional agents.
+"""
