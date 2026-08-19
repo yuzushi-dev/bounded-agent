@@ -5,36 +5,38 @@ import test from 'node:test';
 const source = fs.readFileSync(new URL('../skills/bounded-autonomy/SKILL.md', import.meta.url), 'utf8');
 const document = source.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
 
-test('frontmatter contains exact trigger-only metadata', () => {
+test('frontmatter declares bounded execution intent', () => {
   assert.ok(document, 'skill must have YAML frontmatter');
-  assert.deepEqual(document[1].split('\n'), [
-    'name: bounded-autonomy',
-    'description: Use when a multi-step local task has a narrow filesystem scope and must finish within explicit time and resource limits.',
-  ]);
+  assert.equal(document[1].split('\n')[0], 'name: bounded-autonomy');
+  assert.match(document[1], /execution contract/);
   assert.ok(source.trim().split(/\s+/).length < 500, 'skill must stay under 500 words');
 });
 
-test('canonical command uses the parser contract and deterministic acceptance', () => {
-  const commands = [...source.matchAll(/^\/bounded run .+$/gm)].map(([command]) => command);
-  assert.equal(commands.length, 1, 'skill must define one canonical execution path');
-  assert.deepEqual([...commands[0].matchAll(/(?:^| )(--[a-z-]+) (?:"[^"]*"|\S+)/g)].map((match) => match[1]), [
-    '--task', '--acceptance', '--scope', '--max-seconds', '--max-read-bytes',
-    '--max-artifact-bytes', '--max-output-bytes', '--max-requests',
-    '--prohibited-effects', '--final-gate',
-  ]);
-  assert.match(commands[0], /--acceptance "node --test approval-console\/test_index\.test\.mjs exits with code 0"/);
-  assert.doesNotMatch(commands[0], /tests pass|--max-workers/);
+test('skill defines progressive assurance without mandatory agent fanout', () => {
+  assert.match(source, /L0 direct/);
+  assert.match(source, /L1 verified/);
+  assert.match(source, /L2 planned/);
+  assert.match(source, /L3 orchestrated/);
+  assert.match(source, /Never spawn an agent for bookkeeping/);
+  assert.match(source, /disjoint implementation work or produce independent evidence/);
 });
 
-test('skill assigns fixed limits and confirmation to the correct actors', () => {
-  assert.match(source, /`maxWorkers=1` is controller-fixed and is not an operator field\./);
-  assert.match(source, /`--max-requests` is the controller-enforced worker and verifier request budget; set it to at least 2\./);
-  assert.match(source, /The controller presents the exact preview; the human confirms it\./);
-  assert.match(source, /The skill and model cannot confirm on the human's behalf\./);
+test('skill uses the executable protocol cli', () => {
+  assert.match(source, /bounded prepare/);
+  assert.match(source, /bounded plan-protocol/);
+  assert.match(source, /bounded verifier-brief/);
+  assert.match(source, /bounded verify-result/);
+  assert.match(source, /A protocol containing unresolved decisions cannot execute/);
 });
 
-test('skill keeps authority and external effects outside bounded execution', () => {
-  assert.match(source, /`\/bounded` grants no permission and cannot bypass the controller\./);
-  assert.match(source, /Do not invoke `\/bounded` for an external effect\./);
-  assert.match(source, /Only prepare local artifacts, then stop for a separate human gate\./);
+test('skill uses task-specific evidence instead of universal tdd or coverage', () => {
+  assert.match(source, /Bugfixes need reproduction when feasible/);
+  assert.match(source, /Migrations need before\/after invariants/);
+  assert.match(source, /Dependency updates need build\/type checks/);
+  assert.match(source, /Do not impose a fixed coverage percentage/);
+});
+
+test('skill keeps external effects behind a separate human decision', () => {
+  assert.match(source, /No bounded run authorizes remote Git operations/);
+  assert.match(source, /require a separate human decision after local verification/);
 });
