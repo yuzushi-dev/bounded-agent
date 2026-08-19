@@ -72,6 +72,8 @@ async function request(options, method, params) {
 function prepare(options) {
   const protocol = buildExecutionProtocol({
     task: required(options, 'task'),
+    host: options.host || 'codex',
+    modelTiers: json(options['model-tiers-json'], {}),
     writePaths: csv(required(options, 'scope')),
     readPaths: csv(options['read-scope']),
     acceptance: csv(required(options, 'acceptance')),
@@ -181,9 +183,9 @@ async function main() {
   const [command = 'doctor', ...tokens] = process.argv.slice(2);
   const options = parse(tokens);
   if (command === 'prepare') return prepare(options);
+  if (command === 'plan-protocol') return planProtocol(options);
   if (command === 'verifier-brief') return verifierBrief(options);
   if (command === 'verify-result') return verifyResult(options);
-  if (command === 'plan-protocol') return planProtocol(options);
   if (command === 'plan') return plan(options);
   if (command === 'doctor') return request(options, 'doctor', {});
   if (command === 'install-guard') {
