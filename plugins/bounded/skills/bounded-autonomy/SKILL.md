@@ -72,21 +72,20 @@ Run `bounded doctor` first. Approval and activation remain external lifecycle op
 
 The main agent owns planning, synthesis, integration, and final presentation. The main model always inherits the user's active Codex model and effort.
 
-For Codex subagents, use the protocol routing defaults:
+For Codex subagents, use these defaults:
 
-- `fast`: `gpt-5.6-luna` with `low` reasoning;
-- `standard`: `gpt-5.6-luna` with `xhigh` reasoning;
-- `strong`: `gpt-5.6-sol` with `medium` reasoning.
+- L1 verifier: `gpt-5.6-luna` with `xhigh` reasoning (`bounded-fast`);
+- L2 verifier: `gpt-5.6-luna` with `xhigh` reasoning (`bounded-standard`);
+- L3 disjoint worker: `gpt-5.6-luna` with `medium` reasoning (`bounded-standard-worker`);
+- L3 final verifier: `gpt-5.6-sol` with `medium` reasoning (`bounded-strong`).
 
-Routing by assurance is fixed unless explicitly overridden: L0 uses no subagent; L1 verifier uses `fast`; L2 verifier uses `standard`; L3 disjoint workers use `standard` and the final verifier uses `strong`. The packaged custom-agent profiles are `bounded-fast`, `bounded-standard`, and `bounded-strong`.
-
-Treat model and effort as requested routing until the host exposes evidence of the effective launch. Do not claim a requested model was applied when the runtime cannot verify it.
+The worker profile is role-specific: it uses `workspace-write` and a lower reasoning effort than the semantic verifier. Treat model and effort as requested routing until the host exposes evidence of the effective launch. Do not claim a requested model was applied when the runtime cannot verify it.
 
 For L0, execute and run the relevant check in the current context.
 
 For L1 and L2, do not spawn a planner, coordinator, scribe, or reviewer fleet. Execute in the current context. After execution, create a fresh verifier brief with `bounded verifier-brief` and give that brief, the actual diff, repository state, and captured test/runtime evidence to one fresh verifier. The verifier must not consume the implementer's success reasoning.
 
-For L3, split only real disjoint lanes. Each lane gets exclusive owned paths and declared dependencies. Parallel lanes must not edit the same files. After integration, use one fresh verifier unless the risk itself requires another independent specialty review.
+For L3, split only real disjoint lanes. Each lane gets exclusive owned paths and declared dependencies. Parallel lanes must not edit the same files. Use `protocol.routing.worker` for each worker lane. After integration, use one fresh verifier from `protocol.routing.verifier` unless the risk itself requires another independent specialty review.
 
 ## 5. Verification and completion
 
