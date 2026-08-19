@@ -8,7 +8,7 @@ import {
   routingForAssurance,
 } from '../../plugins/bounded/src/model-routing.mjs';
 
-test('Codex defaults preserve user main and use requested subagent tiers', () => {
+test('Codex defaults preserve user main and use xhigh verifier tiers', () => {
   const tiers = codexModelTiers();
   assert.deepEqual(tiers.fast, { model: 'gpt-5.6-luna', modelReasoningEffort: 'xhigh' });
   assert.deepEqual(tiers.standard, { model: 'gpt-5.6-luna', modelReasoningEffort: 'xhigh' });
@@ -17,6 +17,16 @@ test('Codex defaults preserve user main and use requested subagent tiers', () =>
   assert.equal(l1.verifier.model, 'gpt-5.6-luna');
   assert.equal(l1.verifier.modelReasoningEffort, 'xhigh');
   assert.equal(routingForAssurance('L3', { host: 'codex' }).main.inherited, true);
+});
+
+test('Codex L3 uses Luna medium workers and Sol medium final verifier', () => {
+  const l3 = routingForAssurance('L3', { host: 'codex' });
+  assert.equal(l3.worker.tier, 'standard');
+  assert.equal(l3.worker.model, 'gpt-5.6-luna');
+  assert.equal(l3.worker.modelReasoningEffort, 'medium');
+  assert.equal(l3.worker.profile, 'bounded-standard-worker');
+  assert.equal(l3.verifier.model, 'gpt-5.6-sol');
+  assert.equal(l3.verifier.modelReasoningEffort, 'medium');
 });
 
 test('Claude keeps Haiku available only as the fast mechanical tier', () => {
