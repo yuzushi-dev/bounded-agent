@@ -32,6 +32,19 @@ const HOST_LEVEL_ROUTING = Object.freeze({
   }),
 });
 
+const HOST_ROLE_OVERRIDES = Object.freeze({
+  codex: Object.freeze({
+    L3: Object.freeze({
+      worker: Object.freeze({
+        model: 'gpt-5.6-luna',
+        modelReasoningEffort: 'medium',
+        profile: 'bounded-standard-worker',
+      }),
+    }),
+  }),
+  claude: Object.freeze({}),
+});
+
 const VALID_TIERS = new Set(Object.keys(CODEX_DEFAULTS));
 const VALID_EFFORT = new Set(['none', 'low', 'medium', 'high', 'xhigh', 'max']);
 
@@ -86,16 +99,28 @@ export function resolveModelTier(tier, { host = 'codex', overrides = {} } = {}) 
   });
 }
 
+function resolveRole(level, role, tier, { host, overrides }) {
+  if (tier == null) return null;
+  const base = resolveModelTier(tier, { host, overrides });
+  const roleOverride = HOST_ROLE_OVERRIDES[host]?.[level]?.[role];
+  if (!roleOverride) return base;
+  return Object.freeze({
+    ...base,
+    model: roleOverride.model ?? base.model,
+    modelReasoningEffort: roleOverride.modelReasoningEffort ?? base.modelReasoningEffort,
+    profile: roleOverride.profile ?? null,
+  });
+}
+
 export function routingForAssurance(level, { host = 'codex', overrides = {} } = {}) {
   defaultsForHost(host);
   const policy = routingPolicyForHost(host)[level];
   if (!policy) throw new Error(`unsupported assurance level: ${level}`);
-  const resolve = (tier) => tier == null ? null : resolveModelTier(tier, { host, overrides });
   return Object.freeze({
-    main: resolve(policy.main),
-    verifier: resolve(policy.verifier),
-    worker: resolve(policy.worker),
+    main: resolveRole(level, 'main', policy.main, { host, overrides }),
+    verifier: resolveRole(level, 'verifier', policy.verifier, { host, overrides }),
+    worker: resolveRole(level, 'worker', policy.worker, { host, overrides }),
   });
 }
 
-export { CLAUDE_DEFAULTS, CODEX_DEFAULTS, HOST_DEFAULTS, HOST_LEVEL_ROUTING };
+export { CLAUDE_DEFAULTS, CODEX_DEFAULTS, HOST_DEFAULTS, HOST_LEVEL_ROUTING, HOST_ROLE_OVERRIDES };
