@@ -21,10 +21,11 @@ Inspect the repository first. Infer the smallest credible write scope and explic
 
 Identify unresolved decisions before execution. Resolve them from repository evidence when possible. Ask the user only when multiple materially different valid outcomes remain and the choice changes behavior, architecture, compatibility, persisted data, or user-visible semantics. Put such decisions in `--unresolved`; `bounded prepare` will mark the protocol as blocked until they are resolved.
 
-Create the protocol with `bounded prepare`. Example:
+Create the protocol with Claude routing explicitly selected:
 
 ```sh
 bounded prepare \
+  --host claude \
   --task "Fix refresh-token timeout regression" \
   --scope "src/auth/refresh.ts,tests/auth/refresh.test.ts" \
   --acceptance "expired refresh tokens return the documented error,affected auth tests stay green" \
@@ -34,9 +35,11 @@ bounded prepare \
 The runtime chooses an evidence strategy and an assurance level unless there is a concrete reason to override them.
 
 - L0 direct: trivial, narrow, reversible work. No subagent.
-- L1 verified: normal maintenance. Main agent executes; one fresh verifier checks the result.
-- L2 planned: migrations, refactors, breaking changes, or unresolved design work. Main agent writes the plan and executes it; one fresh verifier checks the result.
-- L3 orchestrated: high-risk or genuinely disjoint multi-surface work. Parallelize only lanes with disjoint ownership. Use one final fresh verifier after integration.
+- L1 verified: normal maintenance. Main agent executes; `bounded-fast-verifier` checks the result on Haiku.
+- L2 planned: migrations, refactors, breaking changes, or unresolved design work. Main agent writes the plan and executes it; `bounded-standard-verifier` checks the result on Sonnet.
+- L3 orchestrated: high-risk or genuinely disjoint multi-surface work. Disjoint implementation lanes use `bounded-standard-worker` on Sonnet; the integrated result is checked by `bounded-strong-verifier` on Opus.
+
+The main Claude model always inherits the user's current model selection. Do not replace it with a tiered model. Tiering applies only to bounded subagents. If the host exposes the effective launched model, record it separately from the requested tier; otherwise report routing as requested but unverified.
 
 Never add agents merely to fill capacity. An agent must either own disjoint implementation work or provide independent evidence.
 
@@ -74,9 +77,9 @@ The main agent owns planning, synthesis, integration, and final presentation.
 
 For L0, execute and run the relevant check in the current context.
 
-For L1 and L2, do not spawn a planner, coordinator, scribe, or reviewer fleet. Execute in the current context. After execution, create a fresh verifier brief with `bounded verifier-brief` and give that brief, the actual diff, repository state, and captured test/runtime evidence to one fresh verifier. The verifier must not consume the implementer's success reasoning.
+For L1 and L2, do not spawn a planner, coordinator, scribe, or reviewer fleet. Execute in the current context. After execution, create a fresh verifier brief with `bounded verifier-brief` and give that brief, the actual diff, repository state, and captured test/runtime evidence to exactly the verifier named by `protocol.routing.verifier`. The verifier must not consume the implementer's success reasoning.
 
-For L3, split only real disjoint lanes. Each lane gets exclusive owned paths and declared dependencies. Parallel lanes must not edit the same files. After integration, use one fresh verifier unless the risk itself requires another independent specialty review.
+For L3, split only real disjoint lanes. Each lane gets exclusive owned paths and declared dependencies and uses `protocol.routing.worker`. Parallel lanes must not edit the same files. After integration, use the verifier named by `protocol.routing.verifier`. Add another specialty review only when the risk itself requires independent expertise.
 
 ## 5. Verification and completion
 
