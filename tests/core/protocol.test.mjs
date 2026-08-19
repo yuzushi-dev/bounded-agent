@@ -8,6 +8,7 @@ import {
   inferStrategy,
   validateVerifierResult,
 } from '../../plugins/bounded/src/protocol.mjs';
+import { routingForAssurance } from '../../plugins/bounded/src/model-routing.mjs';
 
 test('infers evidence strategy from task language', () => {
   assert.equal(inferStrategy('Fix refresh token regression'), 'bugfix');
@@ -33,6 +34,31 @@ test('uses L2 when a task needs planning or has unresolved decisions', () => {
   }), 'L2');
 });
 
+test('routes codex subagents by assurance while preserving the user main model', () => {
+  const l0 = routingForAssurance('L0');
+  assert.equal(l0.main.tier, 'inherit');
+  assert.equal(l0.verifier, null);
+
+  const l1 = routingForAssurance('L1');
+  assert.equal(l1.main.inherited, true);
+  assert.deepEqual({ model: l1.verifier.model, effort: l1.verifier.modelReasoningEffort }, {
+    model: 'gpt-5.6-luna', effort: 'low',
+  });
+
+  const l2 = routingForAssurance('L2');
+  assert.deepEqual({ model: l2.verifier.model, effort: l2.verifier.modelReasoningEffort }, {
+    model: 'gpt-5.6-luna', effort: 'xhigh',
+  });
+
+  const l3 = routingForAssurance('L3');
+  assert.deepEqual({ model: l3.worker.model, effort: l3.worker.modelReasoningEffort }, {
+    model: 'gpt-5.6-luna', effort: 'xhigh',
+  });
+  assert.deepEqual({ model: l3.verifier.model, effort: l3.verifier.modelReasoningEffort }, {
+    model: 'gpt-5.6-sol', effort: 'medium',
+  });
+});
+
 test('builds an executable protocol with strategy evidence and safe effects', () => {
   const protocol = buildExecutionProtocol({
     task: 'Fix parser regression',
@@ -42,10 +68,26 @@ test('builds an executable protocol with strategy evidence and safe effects', ()
   assert.equal(protocol.strategy, 'bugfix');
   assert.equal(protocol.assurance.level, 'L1');
   assert.equal(protocol.assurance.maxSubagents, 1);
+  assert.equal(protocol.routing.main.tier, 'inherit');
+  assert.equal(protocol.routing.verifier.model, 'gpt-5.6-luna');
+  assert.equal(protocol.routing.verifier.modelReasoningEffort, 'low');
   assert.equal(protocol.effects.network, 'deny');
   assert.equal(protocol.publicationGate, 'human-approval');
   assert.deepEqual(protocol.acceptance.map((item) => item.id), ['A1', 'A2']);
   assert.ok(protocol.evidence.includes('regression-test'));
+});
+
+test('allows model tier defaults to be overridden without changing assurance policy', () => {
+  const protocol = buildExecutionProtocol({
+    task: 'Fix parser regression',
+    writePaths: ['src/parser.mjs'],
+    acceptance: ['parser test passes'],
+    modelTiers: { fast: { model: 'gpt-5.6-sol', modelReasoningEffort: 'low' } },
+  });
+  assert.equal(protocol.assurance.level, 'L1');
+  assert.equal(protocol.routing.verifier.tier, 'fast');
+  assert.equal(protocol.routing.verifier.model, 'gpt-5.6-sol');
+  assert.equal(protocol.routing.verifier.modelReasoningEffort, 'low');
 });
 
 test('blocks execution when semantic decisions remain unresolved', () => {
@@ -81,6 +123,7 @@ test('builds a fresh verifier brief without implementation reasoning', () => {
   const brief = buildVerifierBrief(protocol, { diffSummary: 'src/parser.mjs changed', testEvidence: 'node --test: pass' });
   assert.equal(brief.role, 'fresh-verifier');
   assert.equal(brief.acceptance[0].id, 'A1');
+  assert.equal(brief.routing.tier, 'fast');
   assert.match(brief.instruction, /Do not trust implementation claims/);
 });
 
