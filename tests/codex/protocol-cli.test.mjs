@@ -28,7 +28,7 @@ test('prepare emits a usable proportional protocol', () => {
   assert.equal(protocol.effects.remoteGit, 'deny');
   assert.equal(protocol.mustAskUser, false);
   assert.equal(protocol.routing.verifier.model, 'gpt-5.6-luna');
-  assert.equal(protocol.routing.verifier.modelReasoningEffort, 'low');
+  assert.equal(protocol.routing.verifier.modelReasoningEffort, 'xhigh');
 });
 
 test('prepare selects Claude model tiers when host is claude', () => {
@@ -84,6 +84,7 @@ test('verifier brief and result validation form a closed loop', () => {
   assert.equal(parsedBrief.role, 'fresh-verifier');
   assert.equal(parsedBrief.acceptance.length, 2);
   assert.equal(parsedBrief.routing.tier, 'fast');
+  assert.equal(parsedBrief.routing.modelReasoningEffort, 'xhigh');
 
   const resultPath = path.join(temp, 'verifier-result.json');
   fs.writeFileSync(resultPath, JSON.stringify({
