@@ -17,11 +17,19 @@ const HOST_DEFAULTS = Object.freeze({
   claude: CLAUDE_DEFAULTS,
 });
 
-const LEVEL_ROUTING = Object.freeze({
-  L0: Object.freeze({ main: 'inherit', verifier: null, worker: null }),
-  L1: Object.freeze({ main: 'inherit', verifier: 'fast', worker: null }),
-  L2: Object.freeze({ main: 'inherit', verifier: 'standard', worker: null }),
-  L3: Object.freeze({ main: 'inherit', verifier: 'strong', worker: 'standard' }),
+const HOST_LEVEL_ROUTING = Object.freeze({
+  codex: Object.freeze({
+    L0: Object.freeze({ main: 'inherit', verifier: null, worker: null }),
+    L1: Object.freeze({ main: 'inherit', verifier: 'fast', worker: null }),
+    L2: Object.freeze({ main: 'inherit', verifier: 'standard', worker: null }),
+    L3: Object.freeze({ main: 'inherit', verifier: 'strong', worker: 'standard' }),
+  }),
+  claude: Object.freeze({
+    L0: Object.freeze({ main: 'inherit', verifier: null, worker: null }),
+    L1: Object.freeze({ main: 'inherit', verifier: 'standard', worker: null }),
+    L2: Object.freeze({ main: 'inherit', verifier: 'standard', worker: null }),
+    L3: Object.freeze({ main: 'inherit', verifier: 'strong', worker: 'standard' }),
+  }),
 });
 
 const VALID_TIERS = new Set(Object.keys(CODEX_DEFAULTS));
@@ -31,6 +39,12 @@ function defaultsForHost(host) {
   const defaults = HOST_DEFAULTS[host];
   if (!defaults) throw new Error(`unsupported model host: ${host}`);
   return defaults;
+}
+
+function routingPolicyForHost(host) {
+  const policy = HOST_LEVEL_ROUTING[host];
+  if (!policy) throw new Error(`unsupported model host: ${host}`);
+  return policy;
 }
 
 function normalizeEntry(name, value, { host }) {
@@ -73,9 +87,9 @@ export function resolveModelTier(tier, { host = 'codex', overrides = {} } = {}) 
 }
 
 export function routingForAssurance(level, { host = 'codex', overrides = {} } = {}) {
-  const policy = LEVEL_ROUTING[level];
-  if (!policy) throw new Error(`unsupported assurance level: ${level}`);
   defaultsForHost(host);
+  const policy = routingPolicyForHost(host)[level];
+  if (!policy) throw new Error(`unsupported assurance level: ${level}`);
   const resolve = (tier) => tier == null ? null : resolveModelTier(tier, { host, overrides });
   return Object.freeze({
     main: resolve(policy.main),
@@ -84,4 +98,4 @@ export function routingForAssurance(level, { host = 'codex', overrides = {} } = 
   });
 }
 
-export { CLAUDE_DEFAULTS, CODEX_DEFAULTS, HOST_DEFAULTS, LEVEL_ROUTING };
+export { CLAUDE_DEFAULTS, CODEX_DEFAULTS, HOST_DEFAULTS, HOST_LEVEL_ROUTING };
