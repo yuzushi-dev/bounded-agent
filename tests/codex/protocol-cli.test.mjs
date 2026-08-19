@@ -27,6 +27,23 @@ test('prepare emits a usable proportional protocol', () => {
   assert.equal(protocol.assurance.maxSubagents, 1);
   assert.equal(protocol.effects.remoteGit, 'deny');
   assert.equal(protocol.mustAskUser, false);
+  assert.equal(protocol.routing.verifier.model, 'gpt-5.6-luna');
+  assert.equal(protocol.routing.verifier.modelReasoningEffort, 'low');
+});
+
+test('prepare selects Claude model tiers when host is claude', () => {
+  const result = run([
+    'prepare', '--host', 'claude',
+    '--task', 'Fix parser regression',
+    '--scope', 'src/parser.mjs,tests/parser.test.mjs',
+    '--acceptance', 'malformed input returns E_PARSE,parser tests stay green',
+  ]);
+  assert.equal(result.status, 0, result.stderr);
+  const protocol = JSON.parse(result.stdout);
+  assert.equal(protocol.routing.main.inherited, true);
+  assert.equal(protocol.routing.verifier.host, 'claude');
+  assert.equal(protocol.routing.verifier.model, 'haiku');
+  assert.equal(protocol.routing.verifier.modelReasoningEffort, null);
 });
 
 test('prepare blocks semantic forks in the protocol', () => {
@@ -65,6 +82,7 @@ test('verifier brief and result validation form a closed loop', () => {
   const parsedBrief = JSON.parse(brief.stdout);
   assert.equal(parsedBrief.role, 'fresh-verifier');
   assert.equal(parsedBrief.acceptance.length, 2);
+  assert.equal(parsedBrief.routing.tier, 'fast');
 
   const resultPath = path.join(temp, 'verifier-result.json');
   fs.writeFileSync(resultPath, JSON.stringify({
