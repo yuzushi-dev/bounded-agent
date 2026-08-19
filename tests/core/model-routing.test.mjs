@@ -13,20 +13,22 @@ test('Codex defaults preserve user main and use requested subagent tiers', () =>
   assert.deepEqual(tiers.fast, { model: 'gpt-5.6-luna', modelReasoningEffort: 'low' });
   assert.deepEqual(tiers.standard, { model: 'gpt-5.6-luna', modelReasoningEffort: 'xhigh' });
   assert.deepEqual(tiers.strong, { model: 'gpt-5.6-sol', modelReasoningEffort: 'medium' });
+  assert.equal(routingForAssurance('L1', { host: 'codex' }).verifier.model, 'gpt-5.6-luna');
   assert.equal(routingForAssurance('L3', { host: 'codex' }).main.inherited, true);
 });
 
-test('Claude defaults route Haiku, Sonnet, and Opus without synthetic effort', () => {
+test('Claude keeps Haiku available only as the fast mechanical tier', () => {
   const tiers = claudeModelTiers();
   assert.deepEqual(tiers.fast, { model: 'haiku', modelReasoningEffort: null });
   assert.deepEqual(tiers.standard, { model: 'sonnet', modelReasoningEffort: null });
   assert.deepEqual(tiers.strong, { model: 'opus', modelReasoningEffort: null });
 });
 
-test('Claude L1 uses Haiku verifier, L2 Sonnet verifier, L3 Sonnet workers and Opus verifier', () => {
+test('Claude L1 and L2 use Sonnet verifier; L3 uses Sonnet workers and Opus verifier', () => {
   const l1 = routingForAssurance('L1', { host: 'claude' });
   assert.equal(l1.main.inherited, true);
-  assert.equal(l1.verifier.model, 'haiku');
+  assert.equal(l1.verifier.tier, 'standard');
+  assert.equal(l1.verifier.model, 'sonnet');
   assert.equal(l1.worker, null);
 
   const l2 = routingForAssurance('L2', { host: 'claude' });
