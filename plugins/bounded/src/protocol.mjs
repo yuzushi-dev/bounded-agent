@@ -1,3 +1,5 @@
+import { routingForAssurance } from './model-routing.mjs';
+
 const STRATEGIES = Object.freeze({
   bugfix: {
     evidence: ['reproduce-before-when-feasible', 'regression-test', 'affected-tests', 'diff-scope-check'],
@@ -95,6 +97,7 @@ export function buildExecutionProtocol(input = {}) {
     task,
     strategy,
     assurance: { level, ...ASSURANCE[level] },
+    routing: routingForAssurance(level, { host: input.host || 'codex', overrides: input.modelTiers || {} }),
     scope: { readPaths, writePaths },
     acceptance: acceptance.map((value, index) => ({ id: `A${index + 1}`, value })),
     evidence: cleanList(input.evidence?.length ? input.evidence : STRATEGIES[strategy].evidence),
@@ -123,6 +126,7 @@ export function buildVerifierBrief(protocol, { diffSummary = '', testEvidence = 
   if (!protocol?.task || !protocol?.acceptance) throw new Error('valid protocol is required');
   return {
     role: 'fresh-verifier',
+    routing: protocol.routing?.verifier || null,
     instruction: 'Judge the delivered change from repository evidence. Do not trust implementation claims. Return PASS only when every acceptance criterion is demonstrated and no unrelated changes or regressions are found.',
     task: protocol.task,
     strategy: protocol.strategy,
