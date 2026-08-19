@@ -6,6 +6,7 @@ import path from 'node:path';
 
 import { runtimeRequest, defaultStateRoot, readJsonFile } from '../runtime/src/client.mjs';
 import { installGuard } from '../runtime/src/guard.mjs';
+import { buildExecutionProtocol, buildVerifierBrief, validateVerifierResult } from '../src/protocol.mjs';
 
 function parse(tokens) {
   const options = {};
@@ -32,6 +33,15 @@ function number(options, name) {
   return value;
 }
 
+function optionalNumber(options, name, fallback) {
+  if (!options[name]) return fallback;
+  const value = Number(options[name]);
+  if (!Number.isSafeInteger(value) || value < 1) throw new Error(`--${name} must be a positive integer`);
+  return value;
+}
+
+function csv(value = '') { return value.split(',').map((item) => item.trim()).filter(Boolean); }
+function json(value, fallback) { return value ? JSON.parse(value) : fallback; }
 function stateRoot(options) { return path.resolve(options['state-root'] || defaultStateRoot()); }
 function clientId(options) { return options['client-id'] || process.env.BOUNDED_CLIENT_ID || 'bounded-cli'; }
 function sessionId(options) { return options['session-id'] || process.env.BOUNDED_SESSION_ID || 'bounded-cli-session'; }
@@ -47,6 +57,7 @@ function outputCreateOnly(target, value) {
 }
 
 function readContract(options) { return readJsonFile(path.resolve(required(options, 'contract'))); }
+function readProtocol(options) { return readJsonFile(path.resolve(required(options, 'protocol'))); }
 
 function runId(options) {
   if (options['run-id']) return options['run-id'];
@@ -58,39 +69,121 @@ async function request(options, method, params) {
   return runtimeRequest({ stateRoot: stateRoot(options), clientId: params.clientId || clientId(options), method, params });
 }
 
-async function plan(options) {
-  const scope = required(options, 'scope').split(',').map((value) => value.trim()).filter(Boolean);
+function prepare(options) {
+  const protocol = buildExecutionProtocol({
+    task: required(options, 'task'),
+    writePaths: csv(required(options, 'scope')),
+    readPaths: csv(options['read-scope']),
+    acceptance: csv(required(options, 'acceptance')),
+    unresolvedDecisions: csv(options['unresolved']),
+    riskFlags: csv(options['risk']),
+    strategy: options.strategy,
+    assurance: options.assurance,
+    laneCount: optionalNumber(options, 'lane-count', 1),
+    lanes: json(options['lanes-json'], []),
+    evidence: csv(options.evidence),
+    effects: json(options['effects-json'], undefined),
+    limits: {
+      maxSeconds: optionalNumber(options, 'max-seconds', undefined),
+      maxRequests: optionalNumber(options, 'max-requests', undefined),
+      maxReadBytes: optionalNumber(options, 'max-read-bytes', undefined),
+      maxArtifactBytes: optionalNumber(options, 'max-artifact-bytes', undefined),
+      maxOutputBytes: optionalNumber(options, 'max-output-bytes', undefined),
+    },
+  });
+  if (options.output) outputCreateOnly(path.resolve(options.output), protocol);
+  return protocol;
+}
+
+async function planFromValues(options, values) {
+  const scope = values.scope;
   const currentClient = clientId(options);
   const currentSession = sessionId(options);
-  let workerArgs = options['worker-args-json'] ? JSON.parse(options['worker-args-json']) : (options['worker-arg'] ? [options['worker-arg']] : ['-e', 'process.exit(0)']);
+  const workerArgs = options['worker-args-json'] ? JSON.parse(options['worker-args-json']) : (options['worker-arg'] ? [options['worker-arg']] : ['-e', 'process.exit(0)']);
   if (!Array.isArray(workerArgs) || workerArgs.some((value) => typeof value !== 'string')) throw new Error('--worker-args-json must be a string array');
   const contract = await request(options, 'plan', {
     cwd: path.resolve(required(options, 'cwd')), clientId: currentClient, sessionId: currentSession,
     toolCallId: options['tool-call-id'] || `cli-${process.pid}-${Date.now()}`,
-    trigger: { id: 'bounded-cli', value: 'operator plan' }, task: { id: 'task', value: required(options, 'task') },
-    acceptanceCheck: { id: 'acceptance', value: required(options, 'acceptance') },
-    boundedContext: { sessionPath: scope[0], readPaths: [], maxBytes: number(options, 'max-read-bytes') },
+    trigger: { id: 'bounded-cli', value: values.trigger || 'operator plan' }, task: { id: 'task', value: values.task },
+    acceptanceCheck: { id: 'acceptance', value: values.acceptance },
+    boundedContext: { sessionPath: scope[0], readPaths: values.readPaths || [], maxBytes: values.maxReadBytes },
     writeScope: { paths: scope, patchPaths: [], maxFiles: scope.length },
-    verifier: { id: 'bounded-runtime-verifier', digest: digest('bounded-runtime-verifier/v1') },
+    verifier: { id: 'bounded-runtime-verifier', digest: digest('bounded-runtime-verifier/v2') },
     worker: { command: options['worker-command'] || process.execPath, args: workerArgs },
     requiredGates: ['sandbox', 'trusted-state', 'verifier', 'external-effects-disabled'],
     budgets: {
-      maxReadBytes: number(options, 'max-read-bytes'), maxArtifactBytes: number(options, 'max-artifact-bytes'),
-      maxOutputBytes: number(options, 'max-output-bytes'), maxRequests: number(options, 'max-requests'), maxWorkers: 1,
+      maxReadBytes: values.maxReadBytes, maxArtifactBytes: values.maxArtifactBytes,
+      maxOutputBytes: values.maxOutputBytes, maxRequests: values.maxRequests, maxWorkers: values.maxWorkers || 1,
     },
     delivery: { mode: 'local', outputPaths: scope, receiptPath: 'receipts/pending' },
     routing: { reviewerFamily: 'local', chains: [{ role: 'verify', family: 'local', selectors: ['local/runtime'] }] },
     retries: { request: 0, semantic: 0, transport: 0, worker: 0 },
     stopPolicy: { onFailure: options['on-failure'] || 'rollback', partialSuccess: 'block' },
-    trustedStateDigest: digest('bounded-runtime-trusted-state/v1'), maxSeconds: number(options, 'max-seconds'),
+    trustedStateDigest: digest('bounded-runtime-trusted-state/v1'), maxSeconds: values.maxSeconds,
   });
   if (options.output) outputCreateOnly(path.resolve(options.output), contract);
   return contract;
 }
 
+async function plan(options) {
+  const scope = csv(required(options, 'scope'));
+  return planFromValues(options, {
+    task: required(options, 'task'),
+    acceptance: required(options, 'acceptance'),
+    scope,
+    readPaths: [],
+    maxReadBytes: number(options, 'max-read-bytes'),
+    maxArtifactBytes: number(options, 'max-artifact-bytes'),
+    maxOutputBytes: number(options, 'max-output-bytes'),
+    maxRequests: number(options, 'max-requests'),
+    maxSeconds: number(options, 'max-seconds'),
+    maxWorkers: 1,
+  });
+}
+
+async function planProtocol(options) {
+  const protocol = readProtocol(options);
+  if (protocol.mustAskUser) throw new Error(`protocol has unresolved decisions: ${protocol.unresolvedDecisions.join('; ')}`);
+  if (protocol.assurance?.level === 'L3' && protocol.lanes?.length > 1) {
+    throw new Error('L3 multi-lane execution must be dispatched by the host adapter; runtime plan-protocol accepts one worker scope');
+  }
+  return planFromValues(options, {
+    trigger: `bounded execution protocol ${protocol.assurance.level}`,
+    task: protocol.task,
+    acceptance: protocol.acceptance.map(({ id, value }) => `${id}: ${value}`).join(' | '),
+    scope: protocol.scope.writePaths,
+    readPaths: protocol.scope.readPaths,
+    maxReadBytes: protocol.limits.maxReadBytes,
+    maxArtifactBytes: protocol.limits.maxArtifactBytes,
+    maxOutputBytes: protocol.limits.maxOutputBytes,
+    maxRequests: protocol.limits.maxRequests,
+    maxSeconds: protocol.limits.maxSeconds,
+    maxWorkers: 1,
+  });
+}
+
+function verifierBrief(options) {
+  const protocol = readProtocol(options);
+  return buildVerifierBrief(protocol, {
+    diffSummary: options['diff-summary'] || '',
+    testEvidence: options['test-evidence'] || '',
+    runtimeEvidence: options['runtime-evidence'] || '',
+  });
+}
+
+function verifyResult(options) {
+  const protocol = readProtocol(options);
+  const result = readJsonFile(path.resolve(required(options, 'result-file')));
+  return validateVerifierResult(protocol, result);
+}
+
 async function main() {
   const [command = 'doctor', ...tokens] = process.argv.slice(2);
   const options = parse(tokens);
+  if (command === 'prepare') return prepare(options);
+  if (command === 'verifier-brief') return verifierBrief(options);
+  if (command === 'verify-result') return verifyResult(options);
+  if (command === 'plan-protocol') return planProtocol(options);
   if (command === 'plan') return plan(options);
   if (command === 'doctor') return request(options, 'doctor', {});
   if (command === 'install-guard') {
