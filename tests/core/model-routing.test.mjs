@@ -10,10 +10,12 @@ import {
 
 test('Codex defaults preserve user main and use requested subagent tiers', () => {
   const tiers = codexModelTiers();
-  assert.deepEqual(tiers.fast, { model: 'gpt-5.6-luna', modelReasoningEffort: 'low' });
+  assert.deepEqual(tiers.fast, { model: 'gpt-5.6-luna', modelReasoningEffort: 'xhigh' });
   assert.deepEqual(tiers.standard, { model: 'gpt-5.6-luna', modelReasoningEffort: 'xhigh' });
   assert.deepEqual(tiers.strong, { model: 'gpt-5.6-sol', modelReasoningEffort: 'medium' });
-  assert.equal(routingForAssurance('L1', { host: 'codex' }).verifier.model, 'gpt-5.6-luna');
+  const l1 = routingForAssurance('L1', { host: 'codex' });
+  assert.equal(l1.verifier.model, 'gpt-5.6-luna');
+  assert.equal(l1.verifier.modelReasoningEffort, 'xhigh');
   assert.equal(routingForAssurance('L3', { host: 'codex' }).main.inherited, true);
 });
 
