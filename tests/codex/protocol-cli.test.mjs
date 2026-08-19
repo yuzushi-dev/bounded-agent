@@ -42,7 +42,8 @@ test('prepare selects Claude model tiers when host is claude', () => {
   const protocol = JSON.parse(result.stdout);
   assert.equal(protocol.routing.main.inherited, true);
   assert.equal(protocol.routing.verifier.host, 'claude');
-  assert.equal(protocol.routing.verifier.model, 'haiku');
+  assert.equal(protocol.routing.verifier.tier, 'standard');
+  assert.equal(protocol.routing.verifier.model, 'sonnet');
   assert.equal(protocol.routing.verifier.modelReasoningEffort, null);
 });
 
