@@ -1,6 +1,6 @@
 const CODEX_DEFAULTS = Object.freeze({
   inherit: Object.freeze({ model: null, modelReasoningEffort: null }),
-  fast: Object.freeze({ model: 'gpt-5.6-luna', modelReasoningEffort: 'low' }),
+  fast: Object.freeze({ model: 'gpt-5.6-luna', modelReasoningEffort: 'xhigh' }),
   standard: Object.freeze({ model: 'gpt-5.6-luna', modelReasoningEffort: 'xhigh' }),
   strong: Object.freeze({ model: 'gpt-5.6-sol', modelReasoningEffort: 'medium' }),
 });
