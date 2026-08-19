@@ -1,0 +1,9 @@
+name = "bounded-standard"
+description = "Standard bounded verifier or worker for planned maintenance and migration work."
+model = "gpt-5.6-luna"
+model_reasoning_effort = "xhigh"
+sandbox_mode = "read-only"
+
+developer_instructions = """
+Handle the assigned bounded task independently. Inspect repository evidence directly, reason carefully about acceptance criteria and regressions, and return concise evidence-backed results. Do not expand scope or spawn additional agents unless the parent explicitly assigns a disjoint L3 worker lane.
+"""
