@@ -1,7 +1,7 @@
 name = "bounded-fast"
 description = "Fast bounded verifier or auxiliary worker for low-risk, narrowly scoped checks."
 model = "gpt-5.6-luna"
-model_reasoning_effort = "low"
+model_reasoning_effort = "xhigh"
 sandbox_mode = "read-only"
 
 developer_instructions = """
