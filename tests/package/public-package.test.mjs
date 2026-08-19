@@ -72,11 +72,13 @@ test('assembles a clean bounded-agent npm payload with an optional host adapter'
     const required = [
       'package.json', 'README.md', 'LICENSE', 'scripts/bounded.mjs', 'scripts/global-install.mjs',
       'plugins/bounded/.codex-plugin/plugin.json', 'plugins/bounded/bin/bounded.mjs',
+      'plugins/bounded/src/protocol.mjs',
       'plugins/bounded/runtime/bin/bounded-runtime.mjs',
       'plugins/bounded/runtime/systemd/bounded-runtime-guard.service.in',
       'plugins/bounded/runtime/systemd/bounded-runtime-guard.timer',
       'plugins/bounded/skills/bounded-autonomy/SKILL.md',
       'adapters/agent-plugins/plugin.json', 'adapters/claude/.claude-plugin/plugin.json',
+      'adapters/claude/agents/bounded-verifier.md',
       'adapters/omp-ohmy-pi/bounded-hook.mjs', 'adapters/omp-ohmy-pi/README.md',
     ];
     for (const relative of required) assert.ok(packed.includes(relative), relative);
