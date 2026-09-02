@@ -2,7 +2,7 @@
   "name": "omp-bounded",
   "version": "0.0.0",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=22.22.0 <23"
